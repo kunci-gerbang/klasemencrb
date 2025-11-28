@@ -4,137 +4,18 @@
   <meta charset="UTF-8" />
   <title>Panel Admin Klasemen CRB</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    }
-
-    body {
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: radial-gradient(circle at top, #1b1036, #05010a);
-      color: #f7f7ff;
-    }
-
-    .app-wrapper {
-      width: 100%;
-      max-width: 420px;
-      padding: 16px;
-    }
-
-    .card {
-      background: rgba(20, 12, 40, 0.96);
-      border-radius: 24px;
-      padding: 26px 22px 24px;
-      box-shadow: 0 0 28px rgba(191, 95, 255, 0.6);
-      border: 1px solid rgba(191, 95, 255, 0.7);
-    }
-
-    .logo-wrapper {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 10px;
-    }
-
-    .logo-wrapper img {
-      max-width: 140px;
-      height: auto;
-      display: block;
-    }
-
-    h1 {
-      font-size: 1.6rem;
-      margin-bottom: 4px;
-      text-align: center;
-    }
-
-    .subtitle {
-      font-size: 0.9rem;
-      color: #c3b5ff;
-      text-align: center;
-      margin-bottom: 18px;
-    }
-
-    .input-group {
-      margin-bottom: 14px;
-    }
-
-    .input-group label {
-      display: block;
-      font-size: 0.85rem;
-      margin-bottom: 4px;
-      color: #c3b5ff;
-    }
-
-    .input-group input {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 10px;
-      border: 1px solid rgba(200, 200, 255, 0.4);
-      background: rgba(5, 2, 15, 0.9);
-      color: #ffffff;
-      font-size: 0.95rem;
-    }
-
-    .input-group input::placeholder {
-      color: #7d75a8;
-    }
-
-    .input-group input:focus {
-      outline: none;
-      border-color: #ff5fd4;
-      box-shadow: 0 0 12px rgba(255, 95, 212, 0.7);
-    }
-
-    .btn-primary {
-      width: 100%;
-      padding: 11px 12px;
-      border-radius: 999px;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 0.95rem;
-      background: linear-gradient(90deg, #ff4b9a, #bf5fff);
-      color: #fff;
-      box-shadow: 0 0 18px rgba(255, 75, 154, 0.7);
-      margin-top: 4px;
-    }
-
-    .btn-primary:active {
-      transform: scale(0.97);
-    }
-
-    .error-text {
-      margin-top: 8px;
-      font-size: 0.85rem;
-      color: #ff6b81;
-      text-align: center;
-      min-height: 16px;
-    }
-
-    .success-text {
-      margin-top: 4px;
-      font-size: 0.82rem;
-      color: #4cd964;
-      text-align: center;
-      min-height: 16px;
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-<div class="logo-wrapper">
-  <img 
-    src="https://api2-crb.imgnxb.com/images/POd13iqh6aE/logo_96c00afb-2339-4071-aabc-5685e6905423_1764219850663.gif"
-    alt="Logo Klasemen CRB" 
-  />
-</div>
-
+  <div class="app-wrapper">
+    <!-- KARTU LOGIN -->
+    <div class="card" id="login-card">
+      <div class="logo-wrapper">
+        <img
+          src="https://api2-crb.imgnxb.com/images/POd13iqh6aE/logo_96c00afb-2339-4071-aabc-5685e6905423_1764219850663.gif"
+          alt="Logo Klasemen CRB"
+        />
+      </div>
 
       <h1>Panel Admin CRB</h1>
       <p class="subtitle">Masuk dengan username &amp; password admin</p>
@@ -170,114 +51,27 @@
         <p class="success-text" id="success-text"></p>
       </form>
     </div>
+
+    <!-- KARTU PANEL ADMIN (MUNCUL SETELAH LOGIN) -->
+    <div class="card panel" id="panel-card" style="display:none;">
+      <div class="panel-header">
+        <div>
+          <h1>Dashboard Admin CRB</h1>
+          <p class="subtitle" id="welcome-text">Selamat datang, Admin</p>
+        </div>
+        <button id="logout-btn" class="btn-secondary">Logout</button>
+      </div>
+
+      <div class="panel-content">
+        <p>
+          Ini area panel admin. Nanti di sini bisa kamu isi menu klasemen, input
+          data, dll.
+        </p>
+      </div>
+    </div>
   </div>
 
-  <!-- Script Firebase + Login Logic -->
-  <script type="module">
-    // Import Firebase via CDN (bukan "firebase/app")
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-analytics.js";
-    import {
-      getFirestore,
-      collection,
-      query,
-      where,
-      getDocs
-    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-
-    // Konfigurasi Firebase project kamu
-    const firebaseConfig = {
-      apiKey: "AIzaSyDMqHZJRirWCunxOQFXc3aL5M8NIwld6WM",
-      authDomain: "klasemencrb.firebaseapp.com",
-      projectId: "klasemencrb",
-      storageBucket: "klasemencrb.firebasestorage.app",
-      messagingSenderId: "703606806172",
-      appId: "1:703606806172:web:3db31d6cbf75604b02bf59",
-      measurementId: "G-44RRGYR8T9"
-    };
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-    const db = getFirestore(app);
-
-    // Ambil elemen DOM
-    const loginForm   = document.getElementById("login-form");
-    const errorText   = document.getElementById("error-text");
-    const successText = document.getElementById("success-text");
-    const loginBtn    = document.getElementById("login-btn");
-
-    function showError(msg) {
-      if (errorText) errorText.textContent = msg;
-      if (successText) successText.textContent = "";
-    }
-
-    function showSuccess(msg) {
-      if (successText) successText.textContent = msg;
-      if (errorText) errorText.textContent = "";
-    }
-
-    // Event login
-    if (loginForm) {
-      loginForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        const usernameInput = document.getElementById("username");
-        const passwordInput = document.getElementById("password");
-
-        const username = usernameInput?.value.trim() || "";
-        const password = passwordInput?.value || "";
-
-        if (!username || !password) {
-          showError("Username & password wajib diisi.");
-          return;
-        }
-
-        loginBtn.disabled = true;
-        loginBtn.textContent = "Memeriksa...";
-        showError("");
-        showSuccess("");
-
-        try {
-          // Cek ke collection "admins" di Firestore
-          const adminsRef = collection(db, "admins");
-          const q = query(
-            adminsRef,
-            where("username", "==", username),
-            where("password", "==", password)
-          );
-
-          const snap = await getDocs(q);
-          
-if (snap.empty) {
-  showError("Username atau password salah.");
-} else {
-  showSuccess("Login berhasil. Mengarahkan...");
-  localStorage.setItem("admin_username", username);
-
-  // LANGSUNG MASUK KE HALAMAN ADMIN
-  setTimeout(() => {
-    window.location.href = "admin.html";
-  }, 600);
-}
-
-        } catch (err) {
-          console.error(err);
-          showError("Terjadi kesalahan koneksi ke server.");
-        } finally {
-          loginBtn.disabled = false;
-          loginBtn.textContent = "Masuk";
-        }
-      });
-    }
-
-    // Info kalau sudah login sebelumnya
-    window.addEventListener("DOMContentLoaded", () => {
-      const adminName = localStorage.getItem("admin_username");
-      if (adminName) {
-        showSuccess("Sudah login sebagai " + adminName);
-      }
-    });
-  </script>
+  <!-- Logic Firebase & Login -->
+  <script type="module" src="admin.js"></script>
 </body>
 </html>
