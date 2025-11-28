@@ -248,19 +248,18 @@
           );
 
           const snap = await getDocs(q);
+if (snap.empty) {
+  showError("Username atau password salah.");
+} else {
+  showSuccess("Login berhasil. Mengarahkan...");
+  localStorage.setItem("admin_username", username);
 
-          if (snap.empty) {
-            showError("Username atau password salah.");
-          } else {
-            showSuccess("Login berhasil. Mengarahkan...");
-            localStorage.setItem("admin_username", username);
+  // LANGSUNG MASUK KE HALAMAN ADMIN
+  setTimeout(() => {
+    window.location.href = "admin.html";
+  }, 600);
+}
 
-            // TODO: ganti ke halaman admin sebenarnya kalau sudah ada
-            setTimeout(() => {
-              alert("Login sukses sebagai " + username);
-              // contoh: window.location.href = "admin.html";
-            }, 600);
-          }
         } catch (err) {
           console.error(err);
           showError("Terjadi kesalahan koneksi ke server.");
