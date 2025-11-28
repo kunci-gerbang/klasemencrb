@@ -121,20 +121,19 @@ const aNote = byId('a-note');
 const adminMessage = byId('admin-message');
 
 // ---------- INIT FLOW ----------
-
 async function ensureDefaultAdmin() {
   const q = query(collection(db, 'admins'), where('username', '==', 'admin'));
   const snap = await getDocs(q);
+
+  // Jika belum ada admin sama sekali → buat tanpa pesan & tanpa log
   if (snap.empty) {
     await addDoc(collection(db, 'admins'), {
       username: 'admin',
-      password: 'johan1',
-      note: 'Admin default pertama. Segera ubah password di Pengaturan Admin.',
-      createdAt: Date.now()
+      password: 'johan1'
     });
-    console.log('Default admin created: admin / johan1');
   }
 }
+
 
 async function loadAllData() {
   await Promise.all([
