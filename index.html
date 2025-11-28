@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Panel Admin Klasemen Ceriabet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/webp" href="https://rank.ceriabet-klasemen.com/assets/favicon.webp" />
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Firebase SDK (modular via CDN) -->
+  <script type="module" src="admin.js"></script>
+</head>
+<body>
+  <div id="app-root">
+    <!-- Login overlay -->
+    <div id="login-overlay" class="overlay show">
+      <div class="login-card">
+        <div class="login-logo">
+          <img src="https://api2-crb.imgnxb.com/images/POd13iqh6aE/logo_96c00afb-2339-4071-aabc-5685e6905423_1764219850663.gif" alt="Ceriabet" />
+        </div>
+        <h1>Admin Panel Klasemen</h1>
+        <p class="login-subtitle">Masuk sebagai admin untuk mengatur klasemen & event.</p>
+        <label>
+          <span>Admin ID</span>
+          <input id="login-username" type="text" placeholder="admin" autocomplete="username" />
+        </label>
+        <label>
+          <span>Password</span>
+          <input id="login-password" type="password" placeholder="••••••" autocomplete="current-password" />
+        </label>
+        <button id="login-button" class="btn primary">Login</button>
+        <p class="login-hint">
+          Default: <code>admin</code> / <code>johan1</code> (bisa diubah di menu Pengaturan Admin).
+        </p>
+        <p id="login-error" class="error-text"></p>
+      </div>
+    </div>
+
+    <!-- Main layout -->
+    <div id="panel-layout" class="layout hidden">
+      <aside class="sidebar">
+        <div class="sidebar-logo">
+          <img src="https://api2-crb.imgnxb.com/images/POd13iqh6aE/logo_96c00afb-2339-4071-aabc-5685e6905423_1764219850663.gif" alt="Ceriabet" />
+        </div>
+        <h2 class="sidebar-title">PANEL LOMBA TURNOVER</h2>
+        <p class="sidebar-subtitle">
+          Kontrol klasemen, hadiah, konfigurasi event, dan admin dari satu panel bertema Ceriabet.
+        </p>
+        <nav class="sidebar-menu">
+          <button class="menu-item active" data-section="dashboard">📊 Dashboard</button>
+          <button class="menu-item" data-section="klasemen">🏆 Klasemen</button>
+          <button class="menu-item" data-section="hadiah">🎁 Hadiah</button>
+          <button class="menu-item" data-section="event">📅 Pengaturan Event</button>
+          <button class="menu-item" data-section="admin">🛠 Pengaturan Admin</button>
+        </nav>
+        <div class="sidebar-footer">
+          <div id="mode-indicator" class="pill pill-secondary">
+            Mode: <strong>Firebase Live</strong>
+          </div>
+          <button id="logout-button" class="btn ghost small">Logout</button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="main-header">
+          <div>
+            <h1>Panel Lomba Turnover</h1>
+            <p id="welcome-text">Selamat datang, Admin.</p>
+          </div>
+          <div class="header-right">
+            <span id="active-admin-pill" class="pill pill-outline">Admin: -</span>
+          </div>
+        </header>
+
+        <!-- DASHBOARD -->
+        <section id="section-dashboard" class="section">
+          <h2>Dashboard</h2>
+          <p class="section-subtitle">
+            Ringkasan singkat klasemen & konfigurasi. Data diambil langsung dari Firebase Firestore.
+          </p>
+          <div class="grid-3">
+            <div class="card stat-card">
+              <h3>Total Peserta Aktif</h3>
+              <p id="stat-total-aktif" class="stat-value">-</p>
+              <p class="stat-label">Status = AKTIF, Brand = CERIABET</p>
+            </div>
+            <div class="card stat-card">
+              <h3>Total Turnover</h3>
+              <p id="stat-total-turnover" class="stat-value">-</p>
+              <p class="stat-label">Akumulasi semua peserta</p>
+            </div>
+            <div class="card stat-card">
+              <h3>Event Berjalan</h3>
+              <p id="stat-event-title" class="stat-value small">-</p>
+              <p class="stat-label">Diatur dari menu Pengaturan Event</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- KLASEMEN -->
+        <section id="section-klasemen" class="section hidden">
+          <div class="section-header-row">
+            <div>
+              <h2>Klasemen Turnover</h2>
+              <p class="section-subtitle">
+                Tabel klasemen peserta berdasarkan total turnover dan winloss.
+                Kolom: <strong>User ID, Winloss, Turnover, Keterangan, Status, Brand</strong>.
+              </p>
+            </div>
+            <div class="button-row">
+              <button id="btn-add-dummy" class="btn subtle">+ Tambah Contoh Data</button>
+              <button id="btn-export-csv" class="btn secondary">Export CSV</button>
+              <button id="btn-download-template" class="btn subtle">Download Template</button>
+              <label for="csv-input" class="btn primary">
+                Import CSV
+                <input id="csv-input" type="file" accept=".csv" hidden />
+              </label>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="table-wrapper">
+              <table id="klasemen-table">
+                <thead>
+                  <tr>
+                    <th>Pos</th>
+                    <th>User ID</th>
+                    <th>Winloss</th>
+                    <th>Turnover</th>
+                    <th>Keterangan</th>
+                    <th>Status</th>
+                    <th>Brand</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- populated by JS -->
+                </tbody>
+              </table>
+            </div>
+            <div class="table-footer">
+              <span id="klasemen-count">Total entri: 0</span>
+              <span class="hint">Posisi otomatis 1,2,3,... berdasarkan urutan tabel.</span>
+            </div>
+          </div>
+
+          <div class="card form-card">
+            <div class="form-card-header">
+              <h3>Form Peserta Klasemen</h3>
+              <span id="form-mode-pill" class="pill pill-secondary">Mode: Tambah Baru</span>
+            </div>
+            <form id="klasemen-form">
+              <input type="hidden" id="row-id" />
+              <div class="form-grid">
+                <label>
+                  <span>User ID</span>
+                  <input id="f-userId" type="text" placeholder="CB01234" required />
+                </label>
+                <label>
+                  <span>Winloss</span>
+                  <input id="f-winloss" type="text" placeholder="contoh: -1500000 atau 2500000" required />
+                </label>
+                <label>
+                  <span>Turnover</span>
+                  <input id="f-turnover" type="text" placeholder="contoh: 250000000" required />
+                </label>
+                <label>
+                  <span>Keterangan</span>
+                  <input id="f-keterangan" type="text" placeholder="mis. Live Casino / Slot Mix" />
+                </label>
+                <label>
+                  <span>Status</span>
+                  <select id="f-status">
+                    <option value="AKTIF">AKTIF</option>
+                    <option value="TIDAK AKTIF">TIDAK AKTIF</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Brand</span>
+                  <select id="f-brand">
+                    <option value="CERIABET" selected>CERIABET</option>
+                  </select>
+                </label>
+              </div>
+              <div class="button-row right">
+                <button type="button" id="btn-reset-form" class="btn ghost">Reset Form</button>
+                <button type="submit" class="btn primary">Simpan Data</button>
+              </div>
+              <p class="hint">
+                Winloss &amp; Turnover boleh ketik angka saja. Sistem akan otomatis format Rupiah.
+              </p>
+              <p id="form-message" class="success-text"></p>
+            </form>
+          </div>
+        </section>
+
+        <!-- HADIAH -->
+        <section id="section-hadiah" class="section hidden">
+          <h2>Hadiah</h2>
+          <p class="section-subtitle">
+            Konfigurasi hadiah utama & hadiah tambahan untuk lomba turnover. Data disimpan di koleksi
+            <code>hadiah_panel</code> pada Firestore.
+          </p>
+          <div class="card">
+            <form id="hadiah-form">
+              <label>
+                <span>Deskripsi Hadiah Utama</span>
+                <textarea id="h-main" rows="2" placeholder="Contoh: Mobil Toyota Avanza untuk juara 1"></textarea>
+              </label>
+              <label>
+                <span>Deskripsi Hadiah Lainnya</span>
+                <textarea id="h-others" rows="4" placeholder="Contoh: Motor NMax, Scoopy, saldo, dsb."></textarea>
+              </label>
+              <label>
+                <span>Catatan / Syarat Singkat</span>
+                <textarea id="h-notes" rows="3" placeholder="Contoh: Pajak hadiah ditanggung pemenang, dsb."></textarea>
+              </label>
+              <div class="button-row right">
+                <button type="button" id="btn-hadiah-reset" class="btn ghost">Reset</button>
+                <button type="submit" class="btn primary">Simpan Hadiah</button>
+              </div>
+              <p id="hadiah-message" class="success-text"></p>
+            </form>
+          </div>
+        </section>
+
+        <!-- EVENT -->
+        <section id="section-event" class="section hidden">
+          <h2>Pengaturan Event</h2>
+          <p class="section-subtitle">
+            Informasi event yang akan tampil di panel member. Data disimpan di dokumen
+            <code>config/event</code> di Firestore.
+          </p>
+          <div class="card">
+            <form id="event-form">
+              <label>
+                <span>Judul Event</span>
+                <input id="e-title" type="text" placeholder="Lomba Turnover Bulanan Ceriabet" />
+              </label>
+              <label>
+                <span>Periode Event</span>
+                <input id="e-period" type="text" placeholder="1 s/d 31 setiap bulan, 00:00 - 23:59 WIB" />
+              </label>
+              <label>
+                <span>Deskripsi Singkat</span>
+                <textarea id="e-description" rows="3" placeholder="Contoh: Turnover dihitung dari semua game Live Casino, Pragmatic Slot, dsb."></textarea>
+              </label>
+              <label>
+                <span>Catatan Tambahan</span>
+                <textarea id="e-notes" rows="3" placeholder="Contoh: Segala bentuk kecurangan akan didiskualifikasi."></textarea>
+              </label>
+              <div class="button-row right">
+                <button type="button" id="btn-event-reset" class="btn ghost">Reset</button>
+                <button type="submit" class="btn primary">Simpan Event</button>
+              </div>
+              <p id="event-message" class="success-text"></p>
+            </form>
+          </div>
+        </section>
+
+        <!-- ADMIN -->
+        <section id="section-admin" class="section hidden">
+          <h2>Pengaturan Admin</h2>
+          <p class="section-subtitle">
+            Kelola akun admin yang bisa login ke panel ini. Disimpan di koleksi <code>admins</code> di Firestore.
+          </p>
+          <div class="card">
+            <div class="table-wrapper">
+              <table id="admin-table">
+                <thead>
+                  <tr>
+                    <th>Username</th>
+                    <th>Keterangan</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card form-card">
+            <div class="form-card-header">
+              <h3>Tambah / Edit Admin</h3>
+            </div>
+            <form id="admin-form">
+              <input type="hidden" id="admin-id" />
+              <div class="form-grid-2">
+                <label>
+                  <span>Username</span>
+                  <input id="a-username" type="text" placeholder="admin2" required />
+                </label>
+                <label>
+                  <span>Password</span>
+                  <input id="a-password" type="password" placeholder="password baru" required />
+                </label>
+                <label class="full">
+                  <span>Keterangan</span>
+                  <input id="a-note" type="text" placeholder="Contoh: PIC_CRB, Admin Backup, dsb." />
+                </label>
+              </div>
+              <div class="button-row right">
+                <button type="button" id="btn-admin-reset" class="btn ghost">Reset</button>
+                <button type="submit" class="btn primary">Simpan Admin</button>
+              </div>
+              <p class="hint">
+                Saat pertama kali panel dipakai, sistem otomatis membuat admin default:
+                <code>admin / johan1</code>.
+              </p>
+              <p id="admin-message" class="success-text"></p>
+            </form>
+          </div>
+        </section>
+
+        <footer class="footer">
+          Panel bertema ungu Ceriabet. Data realtime via Firebase Firestore. Versi demo untuk internal.
+        </footer>
+      </main>
+    </div>
+  </div>
+</body>
+</html>
