@@ -29,16 +29,28 @@
     }
 
     .card {
-      background: rgba(20, 12, 40, 0.95);
-      border-radius: 18px;
-      padding: 24px 20px;
-      box-shadow: 0 0 20px rgba(143, 0, 255, 0.5);
-      border: 1px solid rgba(143, 0, 255, 0.6);
+      background: rgba(20, 12, 40, 0.96);
+      border-radius: 24px;
+      padding: 26px 22px 24px;
+      box-shadow: 0 0 28px rgba(191, 95, 255, 0.6);
+      border: 1px solid rgba(191, 95, 255, 0.7);
+    }
+
+    .logo-wrapper {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+
+    .logo-wrapper img {
+      max-width: 140px;
+      height: auto;
+      display: block;
     }
 
     h1 {
       font-size: 1.6rem;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
       text-align: center;
     }
 
@@ -46,7 +58,7 @@
       font-size: 0.9rem;
       color: #c3b5ff;
       text-align: center;
-      margin-bottom: 16px;
+      margin-bottom: 18px;
     }
 
     .input-group {
@@ -65,32 +77,33 @@
       padding: 10px 12px;
       border-radius: 10px;
       border: 1px solid rgba(200, 200, 255, 0.4);
-      background: rgba(5, 2, 15, 0.9); /* TIDAK transparan */
+      background: rgba(5, 2, 15, 0.9);
       color: #ffffff;
       font-size: 0.95rem;
     }
 
     .input-group input::placeholder {
-      color: #8077a8;
+      color: #7d75a8;
     }
 
     .input-group input:focus {
       outline: none;
-      border-color: #bf5fff;
-      box-shadow: 0 0 10px rgba(191, 95, 255, 0.7);
+      border-color: #ff5fd4;
+      box-shadow: 0 0 12px rgba(255, 95, 212, 0.7);
     }
 
     .btn-primary {
       width: 100%;
-      padding: 10px 12px;
-      border-radius: 100px;
+      padding: 11px 12px;
+      border-radius: 999px;
       border: none;
       cursor: pointer;
       font-weight: 600;
       font-size: 0.95rem;
       background: linear-gradient(90deg, #ff4b9a, #bf5fff);
       color: #fff;
-      box-shadow: 0 0 16px rgba(255, 75, 154, 0.6);
+      box-shadow: 0 0 18px rgba(255, 75, 154, 0.7);
+      margin-top: 4px;
     }
 
     .btn-primary:active {
@@ -106,8 +119,8 @@
     }
 
     .success-text {
-      margin-top: 8px;
-      font-size: 0.85rem;
+      margin-top: 4px;
+      font-size: 0.82rem;
       color: #4cd964;
       text-align: center;
       min-height: 16px;
@@ -117,26 +130,30 @@
 <body>
   <div class="app-wrapper">
     <div class="card">
+      <!-- GANTI src DI SINI KE LOGO KAMU -->
+      <div class="logo-wrapper">
+        <img src="logo.png" alt="Logo Klasemen CRB" />
+      </div>
+
       <h1>Panel Admin CRB</h1>
       <p class="subtitle">Masuk dengan username &amp; password admin</p>
 
       <form id="login-form">
-<div class="input-group">
-  <label for="password">Password</label>
-  <input
-    type="password"
-    id="password"
-    placeholder="Masukkan password"
-    autocomplete="off"
-    required
-  />
-</div>
-
+        <div class="input-group">
+          <label for="username">Username</label>
+          <input
+            type="text"
+            id="username"
+            placeholder="Masukkan username"
+            autocomplete="off"
+            required
+          />
+        </div>
 
         <div class="input-group">
           <label for="password">Password</label>
           <input
-            type="password"   <!-- INI YANG BIKIN TIDAK KELIHATAN -->
+            type="password"
             id="password"
             placeholder="Masukkan password"
             autocomplete="off"
@@ -154,9 +171,9 @@
     </div>
   </div>
 
-  <!-- PENTING: pakai type="module" dan CDN, bukan 'from "firebase/app"' -->
+  <!-- Script Firebase + Login Logic -->
   <script type="module">
-    // === IMPORT FIREBASE DARI CDN (BUKAN NPM) ===
+    // Import Firebase via CDN (bukan "firebase/app")
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-analytics.js";
     import {
@@ -167,7 +184,7 @@
       getDocs
     } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-    // === CONFIG FIREBASE PUNYAMU (SUDAH AKU MASUKKAN) ===
+    // Konfigurasi Firebase project kamu
     const firebaseConfig = {
       apiKey: "AIzaSyDMqHZJRirWCunxOQFXc3aL5M8NIwld6WM",
       authDomain: "klasemencrb.firebaseapp.com",
@@ -183,76 +200,77 @@
     const analytics = getAnalytics(app);
     const db = getFirestore(app);
 
-    // === DOM ELEMENTS ===
+    // Ambil elemen DOM
     const loginForm   = document.getElementById("login-form");
     const errorText   = document.getElementById("error-text");
     const successText = document.getElementById("success-text");
     const loginBtn    = document.getElementById("login-btn");
 
     function showError(msg) {
-      errorText.textContent = msg;
-      successText.textContent = "";
+      if (errorText) errorText.textContent = msg;
+      if (successText) successText.textContent = "";
     }
 
     function showSuccess(msg) {
-      successText.textContent = msg;
-      errorText.textContent = "";
+      if (successText) successText.textContent = msg;
+      if (errorText) errorText.textContent = "";
     }
 
-    // === EVENT LOGIN ===
-    loginForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
+    // Event login
+    if (loginForm) {
+      loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
 
-      const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value;
+        const usernameInput = document.getElementById("username");
+        const passwordInput = document.getElementById("password");
 
-      if (!username || !password) {
-        showError("Username & password wajib diisi.");
-        return;
-      }
+        const username = usernameInput?.value.trim() || "";
+        const password = passwordInput?.value || "";
 
-      loginBtn.disabled = true;
-      loginBtn.textContent = "Memeriksa...";
-      showError("");
-      showSuccess("");
-
-      try {
-        // Koleksi admins di Firestore:
-        // project: klasemencrb
-        // collection name: admins
-        const adminsRef = collection(db, "admins");
-        const q = query(
-          adminsRef,
-          where("username", "==", username),
-          where("password", "==", password)
-        );
-
-        const snap = await getDocs(q);
-
-        if (snap.empty) {
-          showError("Username atau password salah.");
-        } else {
-          showSuccess("Login berhasil. Mengarahkan...");
-          // Simpan sesi sederhana di localStorage
-          localStorage.setItem("admin_username", username);
-
-          // TODO: kalau sudah punya halaman admin, ganti ke URL kamu
-          // misal: window.location.href = "admin.html";
-          // sementara pakai alert saja:
-          setTimeout(() => {
-            alert("Login sukses sebagai " + username);
-          }, 500);
+        if (!username || !password) {
+          showError("Username & password wajib diisi.");
+          return;
         }
-      } catch (err) {
-        console.error(err);
-        showError("Terjadi kesalahan koneksi ke server.");
-      } finally {
-        loginBtn.disabled = false;
-        loginBtn.textContent = "Masuk";
-      }
-    });
 
-    // === AUTO FILL STATUS KALAU SUDAH LOGIN (OPSIONAL) ===
+        loginBtn.disabled = true;
+        loginBtn.textContent = "Memeriksa...";
+        showError("");
+        showSuccess("");
+
+        try {
+          // Cek ke collection "admins" di Firestore
+          const adminsRef = collection(db, "admins");
+          const q = query(
+            adminsRef,
+            where("username", "==", username),
+            where("password", "==", password)
+          );
+
+          const snap = await getDocs(q);
+
+          if (snap.empty) {
+            showError("Username atau password salah.");
+          } else {
+            showSuccess("Login berhasil. Mengarahkan...");
+            localStorage.setItem("admin_username", username);
+
+            // TODO: ganti ke halaman admin sebenarnya kalau sudah ada
+            setTimeout(() => {
+              alert("Login sukses sebagai " + username);
+              // contoh: window.location.href = "admin.html";
+            }, 600);
+          }
+        } catch (err) {
+          console.error(err);
+          showError("Terjadi kesalahan koneksi ke server.");
+        } finally {
+          loginBtn.disabled = false;
+          loginBtn.textContent = "Masuk";
+        }
+      });
+    }
+
+    // Info kalau sudah login sebelumnya
     window.addEventListener("DOMContentLoaded", () => {
       const adminName = localStorage.getItem("admin_username");
       if (adminName) {
