@@ -4,15 +4,17 @@
 // ------------------ FIREBASE CONFIG ------------------
 // GANTI BAGIAN INI dengan config dari menu:
 // Firebase Console → Project settings → Your apps → Web app → "Use a <script> tag" → config
+// ------------------ FIREBASE CONFIG ------------------
 const firebaseConfig = {
-  apiKey: "REPLACE_WITH_YOUR_API_KEY",
+  apiKey: "AIzaSyDMqHZJRirWCunxOQFXc3aL5M8NIwld6WM",
   authDomain: "klasemencrb.firebaseapp.com",
   projectId: "klasemencrb",
   storageBucket: "klasemencrb.firebasestorage.app",
-  messagingSenderId: "736086806127",
-  appId: "1:736086806127:web:3db31d6cbf75640b82bf59",
-  measurementId: "G-44RRGY8T9"
+  messagingSenderId: "703606806172",
+  appId: "1:703606806172:web:3db31d6cbf75604b02bf59",
+  measurementId: "G-44RRGYR8T9"
 };
+
 // ------------------------------------------------------
 
 // Import Firebase modules dari CDN (harus pakai type="module" di index.html)
