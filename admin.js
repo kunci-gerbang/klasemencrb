@@ -1,21 +1,6 @@
-// admin.js - Panel admin Ceriabet + Firebase Firestore
-// File ini memakai Firebase JS v10 modular (via CDN) dan langsung terhubung ke project kamu.
+// admin.js
 
-// ------------------ FIREBASE CONFIG ------------------
-// Sudah diisi dengan config project "klasemencrb" kamu
-const firebaseConfig = {
-  apiKey: "AIzaSyDMqHZJRirWCunxOQFXc3aL5M8NIwld6WM",
-  authDomain: "klasemencrb.firebaseapp.com",
-  projectId: "klasemencrb",
-  storageBucket: "klasemencrb.firebasestorage.app",
-  messagingSenderId: "703606806172",
-  appId: "1:703606806172:web:3db31d6cbf75604b02bf59",
-  measurementId: "G-44RRGYR8T9"
-};
-// ------------------------------------------------------
-
-// Import Firebase modules dari CDN (harus pakai type="module" di index.html)
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import {
   getFirestore,
   collection,
@@ -26,327 +11,434 @@ import {
   doc,
   query,
   where,
-  orderBy
-} from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+  orderBy,
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+// ==== CONFIG FIREBASE PUNYA KAMU ====
+const firebaseConfig = {
+  apiKey: "AIzaSyDMqHZJRirWCunxOQFXc3aL5M8NIwld6WM",
+  authDomain: "klasemencrb.firebaseapp.com",
+  projectId: "klasemencrb",
+  storageBucket: "klasemencrb.firebasestorage.app",
+  messagingSenderId: "703606806172",
+  appId: "1:703606806172:web:3db31d6cbf75604b02bf59",
+  measurementId: "G-44RRGYR8T9",
+};
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ---------- UTIL & STATE ----------
+// ====== DOM ======
+const $ = (id) => document.getElementById(id);
 
-const byId = (id) => document.getElementById(id);
+const loginOverlay = $("login-overlay");
+const panelLayout = $("panel-layout");
+const loginForm = $("login-form");
+const loginUsername = $("login-username");
+const loginPassword = $("login-password");
+const loginError = $("login-error");
+const logoutButton = $("logout-button");
+const welcomeText = $("welcome-text");
+const activeAdminPill = $("active-admin-pill");
 
-let klasemenData = [];
-let hadiahConfig = null;
-let eventConfig = null;
-let currentAdmin = null;
-
-// Elements
-// Login
-const loginOverlay = byId('login-overlay');
-const loginUsername = byId('login-username');
-const loginPassword = byId('login-password');
-const loginButton = byId('login-button');
-const loginError = byId('login-error');
-
-// Layout
-const panelLayout = document.getElementById('panel-layout');
-const welcomeText = byId('welcome-text');
-const activeAdminPill = byId('active-admin-pill');
-const logoutButton = byId('logout-button');
-
-// Stats
-const statTotalAktif = byId('stat-total-aktif');
-const statTotalTurnover = byId('stat-total-turnover');
-const statEventTitle = byId('stat-event-title');
-
-// Sections
+const menuButtons = Array.from(document.querySelectorAll(".menu-item"));
 const sections = {
-  dashboard: document.getElementById('section-dashboard'),
-  klasemen: document.getElementById('section-klasemen'),
-  hadiah: document.getElementById('section-hadiah'),
-  event: document.getElementById('section-event'),
-  admin: document.getElementById('section-admin'),
+  dashboard: $("section-dashboard"),
+  klasemen: $("section-klasemen"),
+  hadiah: $("section-hadiah"),
+  event: $("section-event"),
+  admin: $("section-admin"),
 };
 
-const menuButtons = Array.from(document.querySelectorAll('.menu-item'));
+// stats
+const statTotalAktif = $("stat-total-aktif");
+const statTotalTurnover = $("stat-total-turnover");
+const statEventTitle = $("stat-event-title");
 
-// Klasemen
-const klasemenForm = byId('klasemen-form');
-const klasemenMessage = byId('klasemen-message');
-const klasemenTableBody = document.querySelector('#klasemen-table tbody');
-const csvInput = byId('csv-input');
+// tabel klasemen
+const klasemenTableBody = document.querySelector("#klasemen-table tbody");
 
-// Hadiah
-const hadiahForm = byId('hadiah-form');
-const hadiahMain = byId('h-main');
-const hadiahOthers = byId('h-others');
-const hadiahNotes = byId('h-notes');
-const hadiahMessage = byId('hadiah-message');
+// hadiah
+const hadiahForm = $("hadiah-form");
+const hMain = $("h-main");
+const hOthers = $("h-others");
+const hNotes = $("h-notes");
+const hadiahMessage = $("hadiah-message");
 
-// Event
-const eventForm = byId('event-form');
-const eTitle = byId('e-title');
-const ePeriod = byId('e-period');
-const eDescription = byId('e-description');
-const eNotes = byId('e-notes');
-const eventMessage = byId('event-message');
+// event
+const eventForm = $("event-form");
+const eTitle = $("e-title");
+const ePeriod = $("e-period");
+const eDescription = $("e-description");
+const eNotes = $("e-notes");
+const eventMessage = $("event-message");
 
-// Admin setting
-const adminTableBody = document.querySelector('#admin-table tbody');
-const adminForm = byId('admin-form');
-const aId = byId('a-id');
-const aUsername = byId('a-username');
-const aPassword = byId('a-password');
-const aNote = byId('a-note');
-const adminMessage = byId('admin-message');
+// admin
+const adminForm = $("admin-form");
+const aId = $("a-id");
+const aUsername = $("a-username");
+const aPassword = $("a-password");
+const aNote = $("a-note");
+const adminMessage = $("admin-message");
+const adminTableBody = document.querySelector("#admin-table tbody");
 
-// ---------- HELPER UI ----------
+// ====== STATE ======
+let currentAdmin = null;
+let klasemenData = [];
+let eventConfig = null;
+let hadiahConfig = null;
 
-function hideLogin() {
-  if (loginOverlay) loginOverlay.classList.add('hidden');
-  if (panelLayout) panelLayout.classList.remove('hidden');
-}
-
+// ====== UI helpers ======
 function showLogin() {
-  if (panelLayout) panelLayout.classList.add('hidden');
-  if (loginOverlay) loginOverlay.classList.remove('hidden');
+  loginOverlay.classList.remove("hidden");
+  panelLayout.classList.add("hidden");
 }
 
-// ---------- FIRESTORE HELPERS ----------
-
-async function fetchCollection(collName, orderField) {
-  const ref = collection(db, collName);
-  const q = orderField
-    ? query(ref, orderBy(orderField, 'desc'))
-    : ref;
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+function showPanel() {
+  loginOverlay.classList.add("hidden");
+  panelLayout.classList.remove("hidden");
 }
 
-// ---------- DATA LOADERS ----------
+function switchSection(name) {
+  Object.entries(sections).forEach(([key, el]) => {
+    const btn = menuButtons.find((b) => b.dataset.section === key);
+    if (!el) return;
+    if (key === name) {
+      el.classList.remove("hidden");
+      btn && btn.classList.add("active");
+    } else {
+      el.classList.add("hidden");
+      btn && btn.classList.remove("active");
+    }
+  });
+}
 
+// ====== LOGIN LOGIC ======
+async function doLogin(e) {
+  e.preventDefault();
+  loginError.textContent = "";
+
+  const username = loginUsername.value.trim();
+  const password = loginPassword.value;
+
+  if (!username || !password) {
+    loginError.textContent = "Admin ID & password wajib diisi.";
+    return;
+  }
+
+  try {
+    const ref = collection(db, "admins");
+    const q = query(ref, where("username", "==", username));
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+      loginError.textContent = "Admin ID tidak ditemukan.";
+      return;
+    }
+
+    const docSnap = snap.docs[0];
+    const data = docSnap.data();
+
+    if (data.password !== password) {
+      loginError.textContent = "Password salah.";
+      return;
+    }
+
+    currentAdmin = {
+      id: docSnap.id,
+      username: data.username,
+      note: data.note || "",
+    };
+    localStorage.setItem("ceriabet_admin", JSON.stringify(currentAdmin));
+
+    applyAdminUI();
+  } catch (err) {
+    console.error(err);
+    loginError.textContent = "Gagal login. Coba lagi.";
+  }
+}
+
+function restoreSession() {
+  try {
+    const raw = localStorage.getItem("ceriabet_admin");
+    if (!raw) {
+      showLogin();
+      return;
+    }
+    const data = JSON.parse(raw);
+    if (!data || !data.username) {
+      showLogin();
+      return;
+    }
+    currentAdmin = data;
+    applyAdminUI();
+  } catch (e) {
+    console.error(e);
+    showLogin();
+  }
+}
+
+function applyAdminUI() {
+  welcomeText.textContent = `Selamat datang, ${currentAdmin.username}.`;
+  activeAdminPill.textContent = `Admin: ${currentAdmin.username}`;
+  showPanel();
+  switchSection("dashboard");
+}
+
+function doLogout() {
+  localStorage.removeItem("ceriabet_admin");
+  currentAdmin = null;
+  showLogin();
+}
+
+// ====== DATA LOADERS ======
 async function loadKlasemen() {
-  const list = await fetchCollection('klasemen', 'turnover');
-  klasemenData = list;
-  renderKlasemenTable();
+  try {
+    const ref = collection(db, "klasemen");
+    const q = query(ref, orderBy("turnover", "desc"));
+    const snap = await getDocs(q);
+    klasemenData = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    renderKlasemen();
+    refreshDashboard();
+  } catch (e) {
+    console.error("loadKlasemen error", e);
+  }
 }
 
-function renderKlasemenTable() {
+function renderKlasemen() {
   if (!klasemenTableBody) return;
-  klasemenTableBody.innerHTML = '';
+  klasemenTableBody.innerHTML = "";
   klasemenData.forEach((row, idx) => {
-    const tr = document.createElement('tr');
+    const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${idx + 1}</td>
-      <td>${row.userId || '-'}</td>
-      <td>${row.nickname || '-'}</td>
-      <td>${row.turnover?.toLocaleString('id-ID') || '0'}</td>
-      <td>${row.hadiah || '-'}</td>
-      <td>${row.notes || '-'}</td>
+      <td>${row.userId || "-"}</td>
+      <td>${row.nickname || "-"}</td>
+      <td>${(row.turnover || 0).toLocaleString("id-ID")}</td>
+      <td>${row.hadiah || "-"}</td>
+      <td>${row.notes || "-"}</td>
     `;
     klasemenTableBody.appendChild(tr);
   });
 }
 
 async function loadHadiah() {
-  const list = await fetchCollection('hadiah', 'updatedAt');
-  hadiahConfig = list[0] || null;
-  if (!hadiahConfig) return;
-  if (hadiahMain) hadiahMain.value = hadiahConfig.main || '';
-  if (hadiahOthers) hadiahOthers.value = hadiahConfig.others || '';
-  if (hadiahNotes) hadiahNotes.value = hadiahConfig.notes || '';
+  try {
+    const ref = collection(db, "hadiah");
+    const snap = await getDocs(ref);
+    const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    hadiahConfig = list[0] || null;
+    if (hadiahConfig) {
+      hMain.value = hadiahConfig.main || "";
+      hOthers.value = hadiahConfig.others || "";
+      hNotes.value = hadiahConfig.notes || "";
+    }
+  } catch (e) {
+    console.error("loadHadiah error", e);
+  }
 }
 
 async function loadEventConfig() {
-  const list = await fetchCollection('eventConfig', 'updatedAt');
-  eventConfig = list[0] || null;
-  if (!eventConfig) return;
-  if (eTitle) eTitle.value = eventConfig.title || '';
-  if (ePeriod) ePeriod.value = eventConfig.period || '';
-  if (eDescription) eDescription.value = eventConfig.description || '';
-  if (eNotes) eNotes.value = eventConfig.notes || '';
+  try {
+    const ref = collection(db, "eventConfig");
+    const snap = await getDocs(ref);
+    const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    eventConfig = list[0] || null;
+    if (eventConfig) {
+      eTitle.value = eventConfig.title || "";
+      ePeriod.value = eventConfig.period || "";
+      eDescription.value = eventConfig.description || "";
+      eNotes.value = eventConfig.notes || "";
+    }
+    refreshDashboard();
+  } catch (e) {
+    console.error("loadEvent error", e);
+  }
 }
 
 async function loadAdmins() {
-  const list = await fetchCollection('admins', 'createdAt');
-  renderAdminTable(list);
+  try {
+    const ref = collection(db, "admins");
+    const snap = await getDocs(ref);
+    const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    renderAdminTable(list);
+  } catch (e) {
+    console.error("loadAdmins error", e);
+  }
+}
+
+function refreshDashboard() {
+  if (statTotalAktif) {
+    statTotalAktif.textContent = String(klasemenData.length || 0);
+  }
+  if (statTotalTurnover) {
+    const total = klasemenData.reduce(
+      (sum, row) => sum + (row.turnover || 0),
+      0
+    );
+    statTotalTurnover.textContent = total.toLocaleString("id-ID");
+  }
+  if (statEventTitle) {
+    statEventTitle.textContent = eventConfig?.title || "Belum diatur";
+  }
+}
+
+// ====== SAVE FORMS ======
+async function saveHadiah(e) {
+  e.preventDefault();
+  try {
+    let targetId = hadiahConfig?.id;
+    const payload = {
+      main: hMain.value,
+      others: hOthers.value,
+      notes: hNotes.value,
+      updatedAt: Date.now(),
+    };
+    if (targetId) {
+      await setDoc(doc(db, "hadiah", targetId), payload, { merge: true });
+    } else {
+      const res = await addDoc(collection(db, "hadiah"), payload);
+      targetId = res.id;
+    }
+    hadiahConfig = { id: targetId, ...payload };
+    hadiahMessage.textContent = "Hadiah tersimpan.";
+    setTimeout(() => (hadiahMessage.textContent = ""), 2000);
+  } catch (e) {
+    console.error(e);
+    hadiahMessage.textContent = "Gagal menyimpan hadiah.";
+  }
+}
+
+async function saveEvent(e) {
+  e.preventDefault();
+  try:
+    let targetId = eventConfig?.id;
+    const payload = {
+      title: eTitle.value,
+      period: ePeriod.value,
+      description: eDescription.value,
+      notes: eNotes.value,
+      updatedAt: Date.now(),
+    };
+    if (targetId) {
+      await setDoc(doc(db, "eventConfig", targetId), payload, { merge: true });
+    } else {
+      const res = await addDoc(collection(db, "eventConfig"), payload);
+      targetId = res.id;
+    }
+    eventConfig = { id: targetId, ...payload };
+    eventMessage.textContent = "Event tersimpan.";
+    refreshDashboard();
+    setTimeout(() => (eventMessage.textContent = ""), 2000);
+  } catch (e) {
+    console.error(e);
+    eventMessage.textContent = "Gagal menyimpan event.";
+  }
 }
 
 function renderAdminTable(list) {
   if (!adminTableBody) return;
-  adminTableBody.innerHTML = '';
+  adminTableBody.innerHTML = "";
   list.forEach((adm, idx) => {
-    const tr = document.createElement('tr');
+    const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${idx + 1}</td>
-      <td>${adm.username || '-'}</td>
-      <td>${adm.note || '-'}</td>
+      <td>${adm.username || "-"}</td>
+      <td>${adm.note || "-"}</td>
       <td>
-        <button class="btn small subtle" data-edit-admin="${adm.id}">Edit</button>
-        <button class="btn small danger" data-del-admin="${adm.id}">Hapus</button>
+        <button class="btn small subtle" data-edit="${adm.id}">Edit</button>
+        <button class="btn small danger" data-del="${adm.id}">Hapus</button>
       </td>
     `;
     adminTableBody.appendChild(tr);
   });
 
-  adminTableBody.querySelectorAll('[data-edit-admin]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const id = btn.getAttribute('data-edit-admin');
-      const adm = list.find((a) => a.id === id);
+  adminTableBody.querySelectorAll("[data-edit]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.getAttribute("data-edit");
+      const adm = list.find((x) => x.id === id);
       if (!adm) return;
       aId.value = adm.id;
-      aUsername.value = adm.username || '';
-      aPassword.value = '';
-      aNote.value = adm.note || '';
+      aUsername.value = adm.username || "";
+      aPassword.value = "";
+      aNote.value = adm.note || "";
     });
   });
 
-  adminTableBody.querySelectorAll('[data-del-admin]').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      const id = btn.getAttribute('data-del-admin');
-      if (!confirm('Hapus admin ini?')) return;
-      await deleteDoc(doc(db, 'admins', id));
-      adminMessage.textContent = 'Admin dihapus.';
+  adminTableBody.querySelectorAll("[data-del]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.getAttribute("data-del");
+      if (!confirm("Hapus admin ini?")) return;
+      await deleteDoc(doc(db, "admins", id));
+      adminMessage.textContent = "Admin dihapus.";
       await loadAdmins();
+      setTimeout(() => (adminMessage.textContent = ""), 2000);
     });
   });
 }
 
-// ---------- ADMIN DEFAULT (DIMATIKAN) ----------
-
-async function ensureDefaultAdmin() {
-  // Tidak lagi membuat admin default dari kode.
-  // Silakan kelola data admin langsung dari Firestore
-  // atau lewat menu Pengaturan Admin pada panel.
-  return;
-}
-
-// ---------- DASHBOARD ----------
-
-function refreshDashboard() {
-  if (statTotalAktif) {
-    statTotalAktif.textContent = klasemenData.length.toString();
-  }
-  if (statTotalTurnover) {
-    const total = klasemenData.reduce((sum, row) => sum + (row.turnover || 0), 0);
-    statTotalTurnover.textContent = total.toLocaleString('id-ID');
-  }
-  if (statEventTitle) {
-    statEventTitle.textContent = eventConfig?.title || 'Belum diatur';
-  }
-}
-
-// ---------- INIT ----------
-
-async function init() {
+async function saveAdmin(e) {
+  e.preventDefault();
   try {
-    await ensureDefaultAdmin();
-    await loadAllData();
-    setupEventListeners();
-    restoreLoginSession();
-  } catch (err) {
-    console.error('Init error:', err);
-    alert('Gagal init panel. Cek console log untuk detail.');
-  }
-}
+    const id = aId.value || null;
+    const username = aUsername.value.trim();
+    const password = aPassword.value;
+    const note = aNote.value;
 
-async function loadAllData() {
-  await Promise.all([
-    loadKlasemen(),
-    loadHadiah(),
-    loadEventConfig(),
-    loadAdmins()
-  ]);
-  refreshDashboard();
-}
-
-document.addEventListener('DOMContentLoaded', init);
-
-// ---------- LOGIN LOGIC ----------
-
-function restoreLoginSession() {
-  try {
-    const raw = localStorage.getItem('ceriabet_admin');
-    if (!raw) {
-      showLogin();
+    if (!username) {
+      adminMessage.textContent = "Username wajib diisi.";
       return;
     }
-    const data = JSON.parse(raw);
-    if (data && data.username) {
-      currentAdmin = { id: data.id, username: data.username, note: data.note || '' };
-      applyAdminUI();
+
+    let payload = { username, note, updatedAt: Date.now() };
+    if (password) {
+      payload.password = password;
+    }
+
+    if (id) {
+      await setDoc(doc(db, "admins", id), payload, { merge: true });
+      adminMessage.textContent = "Admin diperbarui.";
     } else {
-      showLogin();
+      payload.createdAt = Date.now();
+      await addDoc(collection(db, "admins"), payload);
+      adminMessage.textContent = "Admin ditambahkan.";
     }
-  } catch (err) {
-    console.error('Restore login error:', err);
-    showLogin();
+
+    aId.value = "";
+    aUsername.value = "";
+    aPassword.value = "";
+    aNote.value = "";
+
+    await loadAdmins();
+    setTimeout(() => (adminMessage.textContent = ""), 2000);
+  } catch (e) {
+    console.error(e);
+    adminMessage.textContent = "Gagal menyimpan admin.";
   }
 }
 
-async function handleLogin() {
-  const username = loginUsername.value.trim();
-  const password = loginPassword.value;
+// ====== INIT ======
+function setupListeners() {
+  loginForm.addEventListener("submit", doLogin);
+  logoutButton.addEventListener("click", doLogout);
 
-  loginError.textContent = '';
+  menuButtons.forEach((btn) => {
+    btn.addEventListener("click", () =>
+      switchSection(btn.dataset.section || "dashboard")
+    );
+  });
 
-  if (!username || !password) {
-    loginError.textContent = 'Isi username dan password.';
-    return;
-  }
-
-  try {
-    const q = query(collection(db, 'admins'), where('username', '==', username));
-    const snap = await getDocs(q);
-    if (snap.empty) {
-      loginError.textContent = 'Username tidak ditemukan.';
-      return;
-    }
-    const docRef = snap.docs[0];
-    const data = docRef.data();
-    if (data.password !== password) {
-      loginError.textContent = 'Password salah.';
-      return;
-    }
-
-    currentAdmin = { id: docRef.id, username: data.username, note: data.note || '' };
-    localStorage.setItem('ceriabet_admin', JSON.stringify(currentAdmin));
-    applyAdminUI();
-  } catch (err) {
-    console.error('Login error:', err);
-    loginError.textContent = 'Gagal login. Coba lagi.';
-  }
+  hadiahForm.addEventListener("submit", saveHadiah);
+  eventForm.addEventListener("submit", saveEvent);
+  adminForm.addEventListener("submit", saveAdmin);
 }
 
-function applyAdminUI() {
-  hideLogin();
-  welcomeText.textContent = `Selamat datang, ${currentAdmin.username}.`;
-  activeAdminPill.textContent = `Admin: ${currentAdmin.username}`;
-  switchSection('dashboard');
+async function initialLoad() {
+  await Promise.all([loadKlasemen(), loadHadiah(), loadEventConfig(), loadAdmins()]);
 }
 
-function handleLogout() {
-  localStorage.removeItem('ceriabet_admin');
-  currentAdmin = null;
-  showLogin();
-}
-
-// ---------- NAV SECTIONS ----------
-
-function switchSection(sectionName) {
-  for (const [name, el] of Object.entries(sections)) {
-    if (!el) continue;
-    const btn = menuButtons.find((b) => b.dataset.section === name);
-    if (name === sectionName) {
-      el.classList.remove('hidden');
-      if (btn) btn.classList.add('active');
-    } else {
-      el.classList.add('hidden');
-      if (btn) btn.classList.remove('active');
-    }
-  }
-}
-
-// ---------- KALSEMEN HANDLERS, HADIAH, EVENT, ADMIN, EXPORT, IMPORT ----------
-// (bagian ini sama seperti di file kamu sebelumnya, tidak diubah)
+document.addEventListener("DOMContentLoaded", async () => {
+  setupListeners();
+  restoreSession();
+  await initialLoad(); // kalau error, cuma di-console, tidak pop up alert
+});
