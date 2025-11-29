@@ -6,19 +6,18 @@
   padding: 0;
 }
 
-html, body {
+html,
+body {
   height: 100%;
 }
 
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  /* Background pakai gambar, bukan lagi gradient */
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: url("https://plcl.me/images/z3vJ3.jpg") no-repeat center center fixed;
   background-size: cover;
   color: #f7f3ff;
   -webkit-font-smoothing: antialiased;
 }
-
 
 a {
   color: inherit;
@@ -37,15 +36,9 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Overlay juga pakai background gambar yang sama */
   background: url("https://plcl.me/images/z3vJ3.jpg") no-repeat center center fixed;
   background-size: cover;
   z-index: 50;
-}
-
-.overlay.show {
-  visibility: visible;
-  opacity: 1;
 }
 
 .login-card {
@@ -53,11 +46,9 @@ a {
   max-width: 90vw;
   padding: 28px 26px 24px;
   border-radius: 24px;
-  background: linear-gradient(145deg, rgba(19, 7, 42, 0.98), rgba(54, 13, 84, 0.98));
-  box-shadow:
-    0 0 30px rgba(192, 95, 255, 0.4),
-    0 0 70px rgba(63, 8, 137, 0.7);
-  border: 1px solid rgba(199, 132, 255, 0.55);
+  background: #1b022d;
+  box-shadow: 0 0 30px rgba(192, 95, 255, 0.8), 0 0 70px rgba(63, 8, 137, 0.7);
+  border: 1px solid rgba(199, 132, 255, 0.7);
 }
 
 .login-logo {
@@ -84,51 +75,37 @@ a {
   margin-bottom: 16px;
 }
 
-.login-card label {
+.login-label {
   display: block;
   margin-bottom: 10px;
   font-size: 0.85rem;
 }
 
-.login-card label span {
+.login-label span {
   display: block;
   margin-bottom: 4px;
   color: #e7dcff;
 }
 
-.login-card input {
+/* input login TIDAK transparan */
+.login-label input {
   width: 100%;
-  padding: 8px 10px;
+  padding: 10px 14px;
   border-radius: 999px;
-  border: 1px solid rgba(174, 133, 255, 0.6);
-  /* Input tidak transparan ke dalam */
+  border: 1px solid rgba(174, 133, 255, 0.9);
   background: #fff7c4;
   color: #2a1035;
   outline: none;
   font-size: 0.9rem;
 }
 
-.login-card input:focus {
+.login-label input::placeholder {
+  color: #8a6f9b;
+}
+
+.login-label input:focus {
   border-color: #f6a2ff;
   box-shadow: 0 0 0 1px rgba(246, 162, 255, 0.4);
-}
-
-.login-card .btn {
-  width: 100%;
-  margin-top: 10px;
-}
-
-.login-hint {
-  font-size: 0.8rem;
-  color: #cbb5ff;
-  margin-top: 10px;
-  text-align: center;
-}
-
-.login-hint code {
-  background: rgba(55, 21, 92, 0.9);
-  padding: 1px 6px;
-  border-radius: 999px;
 }
 
 .error-text {
@@ -138,13 +115,12 @@ a {
   text-align: center;
 }
 
-/* Layout */
+/* Layout utama */
 
 .layout {
   display: grid;
   grid-template-columns: 270px minmax(0, 1fr);
   min-height: 100vh;
-  /* Background gambar juga terlihat di dalam panel */
   background: url("https://plcl.me/images/z3vJ3.jpg") no-repeat center center fixed;
   background-size: cover;
 }
@@ -207,9 +183,7 @@ a {
 
 .menu-item.active {
   background: radial-gradient(circle at top left, #f43df7 0, #9c35ff 40%, #5b23a9 100%);
-  box-shadow:
-    0 0 12px rgba(248, 109, 255, 0.8),
-    0 0 24px rgba(98, 32, 202, 0.9);
+  box-shadow: 0 0 12px rgba(248, 109, 255, 0.8), 0 0 24px rgba(98, 32, 202, 0.9);
 }
 
 .menu-item:hover {
@@ -245,12 +219,6 @@ a {
 .main-header p {
   font-size: 0.85rem;
   color: #d2c3ff;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
 }
 
 /* Sections */
@@ -291,9 +259,7 @@ a {
   border-radius: 20px;
   padding: 14px 16px 12px;
   border: 1px solid rgba(177, 132, 255, 0.6);
-  box-shadow:
-    0 0 24px rgba(0, 0, 0, 0.7),
-    0 0 40px rgba(86, 29, 155, 0.7);
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.7), 0 0 40px rgba(86, 29, 155, 0.7);
 }
 
 .stat-card h3 {
@@ -371,19 +337,6 @@ tbody tr:hover {
 
 .form-card {
   margin-top: 10px;
-}
-
-.form-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 10px;
 }
 
 .form-grid-2 {
@@ -464,8 +417,7 @@ select:focus {
   background: radial-gradient(circle at top left, #ff57ff, #a234ff);
   color: #1a001f;
   font-weight: 600;
-  box-shadow:
-    0 0 10px rgba(250, 105, 255, 0.7),
+  box-shadow: 0 0 10px rgba(250, 105, 255, 0.7),
     0 0 20px rgba(113, 42, 210, 0.85);
 }
 
@@ -473,8 +425,7 @@ select:focus {
   background: radial-gradient(circle at top left, #4cf2ff, #2187ff);
   color: #020016;
   font-weight: 600;
-  box-shadow:
-    0 0 10px rgba(152, 241, 255, 0.7),
+  box-shadow: 0 0 10px rgba(152, 241, 255, 0.7),
     0 0 18px rgba(42, 131, 219, 0.9);
 }
 
@@ -515,55 +466,12 @@ select:focus {
   color: #f3e7ff;
 }
 
-.pill-secondary {
-  background: rgba(50, 19, 97, 0.96);
-  border-color: rgba(196, 154, 255, 0.9);
-  color: #f7e9ff;
-}
-
-/* Status badges */
-
-.badge {
-  border-radius: 999px;
-  padding: 2px 9px;
-  font-size: 0.75rem;
-  display: inline-block;
-}
-
-.badge-aktif {
-  background: radial-gradient(circle at top, #38ef7d, #11998e);
-  color: #02110b;
-  font-weight: 600;
-}
-
-.badge-nonaktif {
-  background: radial-gradient(circle at top, #ff9966, #ff5e62);
-  color: #1f0003;
-  font-weight: 600;
-}
-
-/* Helper text */
-
-.hint {
-  font-size: 0.78rem;
-  color: #dacbff;
-  margin-top: 4px;
-}
+/* Status text */
 
 .success-text {
   font-size: 0.8rem;
   color: #61ffb8;
   margin-top: 6px;
-}
-
-/* Footer */
-
-.footer {
-  margin-top: auto;
-  padding-top: 8px;
-  font-size: 0.75rem;
-  color: #cebaff;
-  text-align: center;
 }
 
 /* Responsive */
