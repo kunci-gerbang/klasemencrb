@@ -12,10 +12,13 @@ html, body {
 
 body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: radial-gradient(circle at top, #5f2b86 0, #140220 50%, #050008 100%);
+  /* Background pakai gambar, bukan lagi gradient */
+  background: url("https://plcl.me/images/z3vJ3.jpg") no-repeat center center fixed;
+  background-size: cover;
   color: #f7f3ff;
   -webkit-font-smoothing: antialiased;
 }
+
 
 a {
   color: inherit;
