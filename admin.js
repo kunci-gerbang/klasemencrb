@@ -1,4 +1,4 @@
-// admin.js
+// admin.js - versi ringan, tanpa alert init
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import {
@@ -28,9 +28,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ====== DOM ======
+// ====== DOM HELPERS ======
 const $ = (id) => document.getElementById(id);
 
+// Login / layout
 const loginOverlay = $("login-overlay");
 const panelLayout = $("panel-layout");
 const loginForm = $("login-form");
@@ -41,6 +42,7 @@ const logoutButton = $("logout-button");
 const welcomeText = $("welcome-text");
 const activeAdminPill = $("active-admin-pill");
 
+// menu & section
 const menuButtons = Array.from(document.querySelectorAll(".menu-item"));
 const sections = {
   dashboard: $("section-dashboard"),
@@ -55,7 +57,7 @@ const statTotalAktif = $("stat-total-aktif");
 const statTotalTurnover = $("stat-total-turnover");
 const statEventTitle = $("stat-event-title");
 
-// tabel klasemen
+// klasemen
 const klasemenTableBody = document.querySelector("#klasemen-table tbody");
 
 // hadiah
@@ -88,15 +90,15 @@ let klasemenData = [];
 let eventConfig = null;
 let hadiahConfig = null;
 
-// ====== UI helpers ======
+// ====== UI ======
 function showLogin() {
-  loginOverlay.classList.remove("hidden");
-  panelLayout.classList.add("hidden");
+  if (loginOverlay) loginOverlay.classList.remove("hidden");
+  if (panelLayout) panelLayout.classList.add("hidden");
 }
 
 function showPanel() {
-  loginOverlay.classList.add("hidden");
-  panelLayout.classList.remove("hidden");
+  if (loginOverlay) loginOverlay.classList.add("hidden");
+  if (panelLayout) panelLayout.classList.remove("hidden");
 }
 
 function switchSection(name) {
@@ -113,49 +115,16 @@ function switchSection(name) {
   });
 }
 
-// ====== LOGIN LOGIC ======
-async function doLogin(e) {
-  e.preventDefault();
-  loginError.textContent = "";
-
-  const username = loginUsername.value.trim();
-  const password = loginPassword.value;
-
-  if (!username || !password) {
-    loginError.textContent = "Admin ID & password wajib diisi.";
-    return;
+// ====== SESSION & LOGIN ======
+function applyAdminUI() {
+  if (welcomeText) {
+    welcomeText.textContent = `Selamat datang, ${currentAdmin.username}.`;
   }
-
-  try {
-    const ref = collection(db, "admins");
-    const q = query(ref, where("username", "==", username));
-    const snap = await getDocs(q);
-
-    if (snap.empty) {
-      loginError.textContent = "Admin ID tidak ditemukan.";
-      return;
-    }
-
-    const docSnap = snap.docs[0];
-    const data = docSnap.data();
-
-    if (data.password !== password) {
-      loginError.textContent = "Password salah.";
-      return;
-    }
-
-    currentAdmin = {
-      id: docSnap.id,
-      username: data.username,
-      note: data.note || "",
-    };
-    localStorage.setItem("ceriabet_admin", JSON.stringify(currentAdmin));
-
-    applyAdminUI();
-  } catch (err) {
-    console.error(err);
-    loginError.textContent = "Gagal login. Coba lagi.";
+  if (activeAdminPill) {
+    activeAdminPill.textContent = `Admin: ${currentAdmin.username}`;
   }
+  showPanel();
+  switchSection("dashboard");
 }
 
 function restoreSession() {
@@ -173,25 +142,62 @@ function restoreSession() {
     currentAdmin = data;
     applyAdminUI();
   } catch (e) {
-    console.error(e);
+    console.error("restoreSession error:", e);
     showLogin();
   }
 }
 
-function applyAdminUI() {
-  welcomeText.textContent = `Selamat datang, ${currentAdmin.username}.`;
-  activeAdminPill.textContent = `Admin: ${currentAdmin.username}`;
-  showPanel();
-  switchSection("dashboard");
+async function handleLogin(e) {
+  e.preventDefault();
+  if (loginError) loginError.textContent = "";
+
+  const username = (loginUsername?.value || "").trim();
+  const password = loginPassword?.value || "";
+
+  if (!username || !password) {
+    if (loginError) loginError.textContent = "Admin ID & password wajib diisi.";
+    return;
+  }
+
+  try {
+    const ref = collection(db, "admins");
+    const q = query(ref, where("username", "==", username));
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+      if (loginError) loginError.textContent = "Admin ID tidak ditemukan.";
+      return;
+    }
+
+    const docSnap = snap.docs[0];
+    const data = docSnap.data();
+
+    if (data.password !== password) {
+      if (loginError) loginError.textContent = "Password salah.";
+      return;
+    }
+
+    currentAdmin = {
+      id: docSnap.id,
+      username: data.username,
+      note: data.note || "",
+    };
+    localStorage.setItem("ceriabet_admin", JSON.stringify(currentAdmin));
+
+    applyAdminUI();
+  } catch (err) {
+    console.error("login error:", err);
+    if (loginError) loginError.textContent = "Gagal login. Coba lagi.";
+  }
 }
 
-function doLogout() {
+function handleLogout() {
   localStorage.removeItem("ceriabet_admin");
   currentAdmin = null;
   showLogin();
 }
 
-// ====== DATA LOADERS ======
+// ====== DATA LOADERS (AMAN, TANPA ALERT) ======
 async function loadKlasemen() {
   try {
     const ref = collection(db, "klasemen");
@@ -201,7 +207,7 @@ async function loadKlasemen() {
     renderKlasemen();
     refreshDashboard();
   } catch (e) {
-    console.error("loadKlasemen error", e);
+    console.error("loadKlasemen error:", e);
   }
 }
 
@@ -229,12 +235,12 @@ async function loadHadiah() {
     const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     hadiahConfig = list[0] || null;
     if (hadiahConfig) {
-      hMain.value = hadiahConfig.main || "";
-      hOthers.value = hadiahConfig.others || "";
-      hNotes.value = hadiahConfig.notes || "";
+      if (hMain) hMain.value = hadiahConfig.main || "";
+      if (hOthers) hOthers.value = hadiahConfig.others || "";
+      if (hNotes) hNotes.value = hadiahConfig.notes || "";
     }
   } catch (e) {
-    console.error("loadHadiah error", e);
+    console.error("loadHadiah error:", e);
   }
 }
 
@@ -245,14 +251,14 @@ async function loadEventConfig() {
     const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     eventConfig = list[0] || null;
     if (eventConfig) {
-      eTitle.value = eventConfig.title || "";
-      ePeriod.value = eventConfig.period || "";
-      eDescription.value = eventConfig.description || "";
-      eNotes.value = eventConfig.notes || "";
+      if (eTitle) eTitle.value = eventConfig.title || "";
+      if (ePeriod) ePeriod.value = eventConfig.period || "";
+      if (eDescription) eDescription.value = eventConfig.description || "";
+      if (eNotes) eNotes.value = eventConfig.notes || "";
     }
     refreshDashboard();
   } catch (e) {
-    console.error("loadEvent error", e);
+    console.error("loadEventConfig error:", e);
   }
 }
 
@@ -263,7 +269,7 @@ async function loadAdmins() {
     const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     renderAdminTable(list);
   } catch (e) {
-    console.error("loadAdmins error", e);
+    console.error("loadAdmins error:", e);
   }
 }
 
@@ -289,9 +295,9 @@ async function saveHadiah(e) {
   try {
     let targetId = hadiahConfig?.id;
     const payload = {
-      main: hMain.value,
-      others: hOthers.value,
-      notes: hNotes.value,
+      main: hMain?.value || "",
+      others: hOthers?.value || "",
+      notes: hNotes?.value || "",
       updatedAt: Date.now(),
     };
     if (targetId) {
@@ -301,23 +307,25 @@ async function saveHadiah(e) {
       targetId = res.id;
     }
     hadiahConfig = { id: targetId, ...payload };
-    hadiahMessage.textContent = "Hadiah tersimpan.";
-    setTimeout(() => (hadiahMessage.textContent = ""), 2000);
+    if (hadiahMessage) {
+      hadiahMessage.textContent = "Hadiah tersimpan.";
+      setTimeout(() => (hadiahMessage.textContent = ""), 2000);
+    }
   } catch (e) {
     console.error(e);
-    hadiahMessage.textContent = "Gagal menyimpan hadiah.";
+    if (hadiahMessage) hadiahMessage.textContent = "Gagal menyimpan hadiah.";
   }
 }
 
 async function saveEvent(e) {
   e.preventDefault();
-  try:
+  try {
     let targetId = eventConfig?.id;
     const payload = {
-      title: eTitle.value,
-      period: ePeriod.value,
-      description: eDescription.value,
-      notes: eNotes.value,
+      title: eTitle?.value || "",
+      period: ePeriod?.value || "",
+      description: eDescription?.value || "",
+      notes: eNotes?.value || "",
       updatedAt: Date.now(),
     };
     if (targetId) {
@@ -327,12 +335,14 @@ async function saveEvent(e) {
       targetId = res.id;
     }
     eventConfig = { id: targetId, ...payload };
-    eventMessage.textContent = "Event tersimpan.";
     refreshDashboard();
-    setTimeout(() => (eventMessage.textContent = ""), 2000);
+    if (eventMessage) {
+      eventMessage.textContent = "Event tersimpan.";
+      setTimeout(() => (eventMessage.textContent = ""), 2000);
+    }
   } catch (e) {
     console.error(e);
-    eventMessage.textContent = "Gagal menyimpan event.";
+    if (eventMessage) eventMessage.textContent = "Gagal menyimpan event.";
   }
 }
 
@@ -358,10 +368,10 @@ function renderAdminTable(list) {
       const id = btn.getAttribute("data-edit");
       const adm = list.find((x) => x.id === id);
       if (!adm) return;
-      aId.value = adm.id;
-      aUsername.value = adm.username || "";
-      aPassword.value = "";
-      aNote.value = adm.note || "";
+      if (aId) aId.value = adm.id;
+      if (aUsername) aUsername.value = adm.username || "";
+      if (aPassword) aPassword.value = "";
+      if (aNote) aNote.value = adm.note || "";
     });
   });
 
@@ -370,9 +380,11 @@ function renderAdminTable(list) {
       const id = btn.getAttribute("data-del");
       if (!confirm("Hapus admin ini?")) return;
       await deleteDoc(doc(db, "admins", id));
-      adminMessage.textContent = "Admin dihapus.";
+      if (adminMessage) {
+        adminMessage.textContent = "Admin dihapus.";
+        setTimeout(() => (adminMessage.textContent = ""), 2000);
+      }
       await loadAdmins();
-      setTimeout(() => (adminMessage.textContent = ""), 2000);
     });
   });
 }
@@ -380,47 +392,45 @@ function renderAdminTable(list) {
 async function saveAdmin(e) {
   e.preventDefault();
   try {
-    const id = aId.value || null;
-    const username = aUsername.value.trim();
-    const password = aPassword.value;
-    const note = aNote.value;
+    const id = aId?.value || null;
+    const username = (aUsername?.value || "").trim();
+    const password = aPassword?.value || "";
+    const note = aNote?.value || "";
 
     if (!username) {
-      adminMessage.textContent = "Username wajib diisi.";
+      if (adminMessage) adminMessage.textContent = "Username wajib diisi.";
       return;
     }
 
     let payload = { username, note, updatedAt: Date.now() };
-    if (password) {
-      payload.password = password;
-    }
+    if (password) payload.password = password;
 
     if (id) {
       await setDoc(doc(db, "admins", id), payload, { merge: true });
-      adminMessage.textContent = "Admin diperbarui.";
+      if (adminMessage) adminMessage.textContent = "Admin diperbarui.";
     } else {
       payload.createdAt = Date.now();
       await addDoc(collection(db, "admins"), payload);
-      adminMessage.textContent = "Admin ditambahkan.";
+      if (adminMessage) adminMessage.textContent = "Admin ditambahkan.";
     }
 
-    aId.value = "";
-    aUsername.value = "";
-    aPassword.value = "";
-    aNote.value = "";
+    if (aId) aId.value = "";
+    if (aUsername) aUsername.value = "";
+    if (aPassword) aPassword.value = "";
+    if (aNote) aNote.value = "";
 
     await loadAdmins();
     setTimeout(() => (adminMessage.textContent = ""), 2000);
   } catch (e) {
     console.error(e);
-    adminMessage.textContent = "Gagal menyimpan admin.";
+    if (adminMessage) adminMessage.textContent = "Gagal menyimpan admin.";
   }
 }
 
 // ====== INIT ======
 function setupListeners() {
-  loginForm.addEventListener("submit", doLogin);
-  logoutButton.addEventListener("click", doLogout);
+  if (loginForm) loginForm.addEventListener("submit", handleLogin);
+  if (logoutButton) logoutButton.addEventListener("click", handleLogout);
 
   menuButtons.forEach((btn) => {
     btn.addEventListener("click", () =>
@@ -428,17 +438,27 @@ function setupListeners() {
     );
   });
 
-  hadiahForm.addEventListener("submit", saveHadiah);
-  eventForm.addEventListener("submit", saveEvent);
-  adminForm.addEventListener("submit", saveAdmin);
+  if (hadiahForm) hadiahForm.addEventListener("submit", saveHadiah);
+  if (eventForm) eventForm.addEventListener("submit", saveEvent);
+  if (adminForm) adminForm.addEventListener("submit", saveAdmin);
 }
 
-async function initialLoad() {
-  await Promise.all([loadKlasemen(), loadHadiah(), loadEventConfig(), loadAdmins()]);
+async function initialLoadSafe() {
+  try {
+    await Promise.all([
+      loadKlasemen(),
+      loadHadiah(),
+      loadEventConfig(),
+      loadAdmins(),
+    ]);
+  } catch (e) {
+    // error cuma ditulis di console, tidak munculin alert
+    console.error("initialLoad error:", e);
+  }
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
   setupListeners();
   restoreSession();
-  await initialLoad(); // kalau error, cuma di-console, tidak pop up alert
+  await initialLoadSafe();
 });
